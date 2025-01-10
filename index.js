@@ -1,13 +1,22 @@
 /* === Imports === */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js"; 
-import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js"; 
-import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-import { signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js"
+import { 
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js"; 
+
+import { 
+    getFirestore,
+    collection,
+    addDoc,
+    updateDoc,
+    serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js"
 
 /* === Firebase Setup === */
 
@@ -117,27 +126,21 @@ onAuthStateChanged(auth, user => {
     }
 });
 
+async function addPostToDB(postBody, user) {
+    try {
+        const docRef = await addDoc(collection(db, "posts"), {
+            body: postBody,
+            uid: user.uid,
 
-function showUserGreeting(element, user) {
-    if (user.displayName) {
-        const firstName = user.displayName.split(" ")[0];
-        element.textContent = `Hi ${firstName}`;
-    } 
-    else {
-        element.textContent = "Hi Guest";
+        });
+        await updateDoc(docRef, {
+            createdAt: serverTimestamp()
+        })
+        console.log("Document written with ID: ", docRef.id);
+    } catch (e) {
+        console.error("Error adding document: ", e);
     }
-}
-
-
-function showProfilePicture(imgElement, user) {
-    if (user.photoURL) {
-        imgElement.src = user.photoURL;
-    } 
-    else {
-        imgElement.src = "assets/images/defaultPic.jpg";
-    }
-}
-
+ }
  
 
 /* == Functions - UI Functions == */
@@ -165,11 +168,33 @@ function showLoggedOutView() {
 
  function postButtonPressed() {
     const postBody = textareaEl.value
+    const user = auth.currentUser
    
     if (postBody) {
-        // addPostToDB(postBody)
-        clearInputField(textareaEl)
+        addPostToDB(postBody, user)
+        textareaEl.textContent = ""
     }
  }
+
+ function showUserGreeting(element, user) {
+    if (user.displayName) {
+        const firstName = user.displayName.split(" ")[0];
+        element.textContent = `Hi ${firstName}`;
+    } 
+    else {
+        element.textContent = "Hi Guest";
+    }
+ }
+
+
+ function showProfilePicture(imgElement, user) {
+    if (user.photoURL) {
+        imgElement.src = user.photoURL;
+    } 
+    else {
+        imgElement.src = "assets/images/defaultPic.jpg";
+    }
+ }
+ 
 
 //credit: coursera
